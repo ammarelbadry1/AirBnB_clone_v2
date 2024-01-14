@@ -126,18 +126,19 @@ class HBNBCommand(cmd.Cmd):
         for arg in line_args[1:]:
             if '=' in arg:
                 param = arg.split('=')
-                param_key = param[0]
-                param_value = param[1]
-                value = None
-                if param_value[0] == '"' and param_value[-1] == '"':
-                    value = param_value[1:-1].replace('_', ' ')
-                elif '.' in param_value:
-                    value = float(param_value)
-                else:
-                    value = int(param_value)
+                if len(param) == 2:
+                    param_key = param[0]
+                    param_value = param[1]
+                    value = None
+                    if param_value[0] == '\"' and param_value[-1] == '\"':
+                        value = param_value[1:-1].replace('_', ' ')
+                    elif '.' in param_value:
+                        value = float(param_value)
+                    else:
+                        value = int(param_value)
 
-                if value is not None:
-                    setattr(new_instance, param_key, value)
+                    if value is not None:
+                        setattr(new_instance, param_key, value)
         print(new_instance.id)
         storage.save()
 
