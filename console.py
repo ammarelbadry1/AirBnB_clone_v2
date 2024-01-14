@@ -126,7 +126,7 @@ class HBNBCommand(cmd.Cmd):
         for arg in line_args[1:]:
             if '=' in arg:
                 param = arg.split('=')
-                if len(param) == 2:
+                if len(param) == 2 and param[0] and param[1]:
                     param_key = param[0]
                     param_value = param[1]
                     value = None
