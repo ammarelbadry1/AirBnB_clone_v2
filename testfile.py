@@ -1,48 +1,46 @@
 #!/usr/bin/python3
-""" Test delete feature
-"""
-from models.engine.file_storage import FileStorage
-from models.state import State
 
-fs = FileStorage()
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import declarative_base, Session, relationship
 
-# All States
-all_states = fs.all(State)
-print("All States: {}".format(len(all_states.keys())))
-for state_key in all_states.keys():
-    print(all_states[state_key])
+Base = declarative_base()
 
-# Create a new State
-new_state = State()
-new_state.name = "California"
-fs.new(new_state)
-fs.save()
-print("New State: {}".format(new_state))
+class State(Base):
+    __tablename__ = 'states'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), nullable=False)
+    cities = relationship('City', back_populates='state', cascade='all, delete-orphan')
 
-# All States
-all_states = fs.all(State)
-print("All States: {}".format(len(all_states.keys())))
-for state_key in all_states.keys():
-    print(all_states[state_key])
+class City(Base):
+    __tablename__ = 'cities'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), nullable=False)
+    state_id = Column(Integer, ForeignKey('states.id'))
+    state = relationship('State', back_populates='cities')
 
-# Create another State
-another_state = State()
-another_state.name = "Nevada"
-fs.new(another_state)
-fs.save()
-print("Another State: {}".format(another_state))
+# Creating the database engine
+engine = create_engine('sqlite:///:memory:')
 
-# All States
-all_states = fs.all(State)
-print("All States: {}".format(len(all_states.keys())))
-for state_key in all_states.keys():
-    print(all_states[state_key])        
+# Creating tables
+Base.metadata.create_all(engine)
 
-# Delete the new State
-fs.delete(new_state)
+# Creating a session
+session = Session(engine)
 
-# All States
-all_states = fs.all(State)
-print("All States: {}".format(len(all_states.keys())))
-for state_key in all_states.keys():
-    print(all_states[state_key])
+# Creating a state and associated cities
+california = State(name='California', cities=[City(name='Los Angeles'), City(name='San Francisco')])
+session.add(california)
+session.commit()
+
+# Querying data
+california = session.query(State).filter_by(name='California').first()
+print(california.name, [city.name for city in california.cities])
+
+# Deleting the state (and associated cities due to cascade)
+session.delete(california)
+session.commit()
+
+# Verifying that the state and cities are deleted
+california = session.query(State).filter_by(name='California').first()
+print(california)  # Should be None
+
