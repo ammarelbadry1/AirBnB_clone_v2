@@ -39,19 +39,23 @@ class Place(BaseModel, Base):
         def reviews(self):
             """Getter method to retrieve related Review instances."""
             from models import storage
-            dic = storage.all('Review')
-            return [].append(v for k, v in dic.items()
+            dict = storage.all('Review')
+            return [].append(v for v in dict.values()
                              if self.id == v['place_id'])
 
         @property
         def amenities(self):
             """Getter method to retrieve related Amenity instances."""
             from models import storage
-            dic = storage.all('Amenity')
-            return [].append(v for k, v in dic.items()
+            dict = storage.all('Amenity')
+            return [].append(v for v in dict.values()
                              if self.id == v['amenity_ids'])
 
         @amenities.setter
         def amenities(self, obj):
-            if isinstance(obj, Amenity):
+            """
+            method that handles append method for adding an Amenity.id
+            to the attribute amenity_ids.
+            """
+            if type(obj) is Amenity:
                 self.amenity_ids.append(obj.id)
