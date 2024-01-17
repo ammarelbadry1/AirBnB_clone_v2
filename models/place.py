@@ -1,9 +1,16 @@
 #!/usr/bin/python3
 """ Place Module for HBNB project """
 from models.base_model import BaseModel, Base
+from models.amenity import Amenity
 import os
-from sqlalchemy import Column, String, ForeignKey, Integer, Float
+from sqlalchemy import Column, String, ForeignKey, Integer, Float, Table
 from sqlalchemy.orm import relationship
+from models import storage
+
+place_amenity = Table('place_amenity', Base.metadata,
+    Column('place_id', String(60), ForeignKey('places.id'), primary_key=True),
+    Column('amenity_id', String(60), ForeignKey('amenities.id'), primary_key=True)
+)
 
 
 class Place(BaseModel, Base):
@@ -43,10 +50,24 @@ class Place(BaseModel, Base):
             method that returns the list of Review instances with
             place_id equals to the current Place.id.
             """
-            from models import storage
             newlist = []
             review_dict = storage.all('Review')
             for value in review_dict.values():
                 if self.id == value['place_id']:
                     newlist.append(value)
             return newlist
+
+        @property
+        def amenities(self):
+            """Getter method to retrieve related Amenity instances"""
+            newlist = []
+            amenity_dict = storage.all('Amenity')
+            for value in amenity_dict.values():
+                if self.id == value['amenity_ids']:
+                    newlist.append(value)
+            return newlist
+
+        @amenities.setter
+        def amenities(self, obj):
+            if isinstance(obj, Amenity):
+                self.amenity_ids.append(obj.id)

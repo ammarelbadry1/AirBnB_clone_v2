@@ -1,46 +1,43 @@
 #!/usr/bin/python3
+""" Test link Many-To-Many Place <> Amenity
+"""
+from models import *
 
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import declarative_base, Session, relationship
+# creation of a State
+state = State(name="California")
+state.save()
 
-Base = declarative_base()
+# creation of a City
+city = City(state_id=state.id, name="San Francisco")
+city.save()
 
-class State(Base):
-    __tablename__ = 'states'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
-    cities = relationship('City', back_populates='state', cascade='all, delete-orphan')
+# creation of a User
+user = User(email="john@snow.com", password="johnpwd")
+user.save()
 
-class City(Base):
-    __tablename__ = 'cities'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
-    state_id = Column(Integer, ForeignKey('states.id'))
-    state = relationship('State', back_populates='cities')
+# creation of 2 Places
+place_1 = Place(user_id=user.id, city_id=city.id, name="House 1")
+place_1.save()
+place_2 = Place(user_id=user.id, city_id=city.id, name="House 2")
+place_2.save()
 
-# Creating the database engine
-engine = create_engine('sqlite:///:memory:')
+# creation of 3 various Amenity
+amenity_1 = Amenity(name="Wifi")
+amenity_1.save()
+amenity_2 = Amenity(name="Cable")
+amenity_2.save()
+amenity_3 = Amenity(name="Oven")
+amenity_3.save()
 
-# Creating tables
-Base.metadata.create_all(engine)
+# link place_1 with 2 amenities
+place_1.amenities.append(amenity_1)
+place_1.amenities.append(amenity_2)
 
-# Creating a session
-session = Session(engine)
+# link place_2 with 3 amenities
+place_2.amenities.append(amenity_1)
+place_2.amenities.append(amenity_2)
+place_2.amenities.append(amenity_3)
 
-# Creating a state and associated cities
-california = State(name='California', cities=[City(name='Los Angeles'), City(name='San Francisco')])
-session.add(california)
-session.commit()
+storage.save()
 
-# Querying data
-california = session.query(State).filter_by(name='California').first()
-print(california.name, [city.name for city in california.cities])
-
-# Deleting the state (and associated cities due to cascade)
-session.delete(california)
-session.commit()
-
-# Verifying that the state and cities are deleted
-california = session.query(State).filter_by(name='California').first()
-print(california)  # Should be None
-
+print("OK")
