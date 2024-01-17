@@ -32,7 +32,7 @@ class DBStorage():
         HBNB_MYSQL_DB = os.getenv('HBNB_MYSQL_DB')
         self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.format(
             HBNB_MYSQL_USER, HBNB_MYSQL_PWD, HBNB_MYSQL_HOST, HBNB_MYSQL_DB),
-            pool_pre_ping=True)
+            pool_pre_ping=True, echo=False)
         Session = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = Session()
 

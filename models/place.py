@@ -30,7 +30,7 @@ class Place(BaseModel, Base):
         latitude = Column(Float, nullable=False)
         longitude = Column(Float, nullable=False)
         reviews = relationship('Review', backref='place',
-                               cascade=('all, delete_orphan'))
+                               cascade=('all, delete-orphan'))
     else:
         city_id = ""
         user_id = ""
