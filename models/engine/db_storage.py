@@ -36,22 +36,19 @@ class DBStorage():
         Session = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = Session()
 
-        if HBNB_MYSQL_DB == 'test':
+        if os.getenv('HBNB_ENV') == 'test':
             metadata = MetaData(bind=self.__engine)
             metadata.drop_all()
 
     def all(self, cls=None):
         """query on the current database session and return a dictionary"""
         newdict = {}
-        if cls:
-            output = self.__session.query(cls).all()
-            for obj in output:
-                newdict[f'{obj.__class__.__name__}.{obj.id}'] = obj
-        else:
-            for classname in classes:
-                output = self.__session.query(classname).all()
-                for obj in output:
-                    newdict[f'{obj.__class__.__name__}.{obj.id}'] = obj
+        for classname in classes:
+            if cls is None or cls == classes[classname] or cls == classname:
+                objs = self.__session.query(classes[classname]).all()
+                for obj in objs:
+                    key = obj.__class__.__name__ + '.' + obj.id
+                    newdict[key] = obj
         return newdict
 
     def new(self, obj):
