@@ -113,37 +113,36 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def dic_create(self, args):
-        """creates a dictionary from a list"""
-        dic = {}
-        for arg in args:
-            if "=" in arg:
-                param = arg.split('=', 1)
-                key = param[0]
-                value = param[1]
-                if value[0] == value[-1] == '"':
-                    value = value.replace('"', '').replace('_', ' ')
-                elif ('.' in value):
-                    value = float(value)
-                else:
-                    value = int(value)
-                dic[key] = value
-        return (dic)
-
     def do_create(self, args):
-        """Creates a new instance of BaseModel """
-        args = args.split()
-        if len(args) == 0:
+        """ Create an object of any class"""
+        if not args:
             print("** class name missing **")
             return
-        if args[0] in HBNBCommand.classes:
-            dic = self.dic_creator(args[1:])
-            instance = HBNBCommand.classes[args[0]](**dic)
-        else:
+        list_of_args = args.split()
+        if list_of_args[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        print(instance.id)
-        instance.save()
+        new_instance = HBNBCommand.classes[list_of_args[0]]()
+        for arg in list_of_args[1:]:
+            parameter = arg.split('=')
+            try:
+                if (len(parameter) == 2 and parameter[0] and parameter[1]):
+                    if (parameter[1][0] == '\"' and parameter[1][-1] == '\"'):
+                        value = parameter[1][1:-1].replace('_', ' ')
+                    elif ('.' in parameter[1]):
+                        value = float(parameter[1])
+                    else:
+                        try:
+                            value = int(parameter[1])
+                        except ValueError:
+                            continue
+                    setattr(new_instance, parameter[0], value)
+                else:
+                    continue
+            except IndexError:
+                continue
+        new_instance.save()
+        print(new_instance.id)
 
     def help_create(self):
         """ Help information for the create method """
