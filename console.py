@@ -73,7 +73,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is '}'\
+                    if pline[0] == '{' and pline[-1] == '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -118,29 +118,31 @@ class HBNBCommand(cmd.Cmd):
         if not args:
             print("** class name missing **")
             return
-        line_args = args.split()
-        if line_args[0] not in HBNBCommand.classes:
+        list_of_args = args.split()
+        if list_of_args[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[line_args[0]]()
-        for arg in line_args[1:]:
-            if '=' in arg:
-                param = arg.split('=')
-                if len(param) == 2 and param[0] and param[1]:
-                    param_key = param[0]
-                    param_value = param[1]
-                    value = None
-                    if param_value[0] == '\"' and param_value[-1] == '\"':
-                        value = param_value[1:-1].replace('_', ' ')
-                    elif '.' in param_value:
-                        value = float(param_value)
+        new_instance = HBNBCommand.classes[list_of_args[0]]()
+        for arg in list_of_args[1:]:
+            parameter = arg.split('=')
+            try:
+                if (len(parameter) == 2 and parameter[0] and parameter[1]):
+                    if (parameter[1][0] == '\"' and parameter[1][-1] == '\"'):
+                        value = parameter[1][1:-1].replace('_', ' ')
+                    elif ('.' in parameter[1]):
+                        value = float(parameter[1])
                     else:
-                        value = int(param_value)
-
-                    if value is not None:
-                        setattr(new_instance, param_key, value)
+                        try:
+                            value = int(parameter[1])
+                        except ValueError:
+                            continue
+                    setattr(new_instance, parameter[0], value)
+                else:
+                    continue
+            except IndexError:
+                continue
+        new_instance.save()
         print(new_instance.id)
-        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -222,11 +224,11 @@ class HBNBCommand(cmd.Cmd):
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all(args).items():
                 if k.split('.')[0] == args:
                     print_list.append(str(v))
         else:
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all().items():
                 print_list.append(str(v))
 
         print(print_list)
@@ -288,7 +290,7 @@ class HBNBCommand(cmd.Cmd):
                 args.append(v)
         else:  # isolate args
             args = args[2]
-            if args and args[0] is '\"':  # check for quoted arg
+            if args and args[0] == '\"':  # check for quoted arg
                 second_quote = args.find('\"', 1)
                 att_name = args[1:second_quote]
                 args = args[second_quote + 1:]
@@ -296,10 +298,10 @@ class HBNBCommand(cmd.Cmd):
             args = args.partition(' ')
 
             # if att_name was not quoted arg
-            if not att_name and args[0] is not ' ':
+            if not att_name and args[0] != ' ':
                 att_name = args[0]
             # check for quoted val arg
-            if args[2] and args[2][0] is '\"':
+            if args[2] and args[2][0] == '\"':
                 att_val = args[2][1:args[2].find('\"', 1)]
 
             # if att_val was not quoted arg

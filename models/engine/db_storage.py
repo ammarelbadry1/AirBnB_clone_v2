@@ -1,22 +1,17 @@
 #!/usr/bin/python3
 """This module defines a class to manage database storage for hbnb clone"""
 
-import os
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
+import os
 from models.base_model import BaseModel, Base
+from models.engine.file_storage import FileStorage
 from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
-
-classes = {
-            'BaseModel': BaseModel, 'User': User, 'Place': Place,
-            'State': State, 'City': City, 'Amenity': Amenity,
-            'Review': Review
-            }
 
 
 class DBStorage():
@@ -26,30 +21,36 @@ class DBStorage():
 
     def __init__(self):
         """instantiates model for database storage"""
-        HBNB_MYSQL_USER = os.getenv('HBNB_MYSQL_USER')
-        HBNB_MYSQL_PWD = os.getenv('HBNB_MYSQL_PWD')
-        HBNB_MYSQL_HOST = os.getenv('HBNB_MYSQL_HOST')
-        HBNB_MYSQL_DB = os.getenv('HBNB_MYSQL_DB')
         self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.format(
-            HBNB_MYSQL_USER, HBNB_MYSQL_PWD, HBNB_MYSQL_HOST, HBNB_MYSQL_DB),
-            pool_pre_ping=True, echo=False)
+            os.environ['HBNB_MYSQL_USER'],
+            os.environ['HBNB_MYSQL_PWD'],
+            os.environ['HBNB_MYSQL_HOST'],
+            os.environ['HBNB_MYSQL_DB']), pool_pre_ping=True, echo=False)
         Session = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = Session()
-
-        if os.getenv('HBNB_ENV') == 'test':
+        if os.environ['HBNB_ENV'] == 'test':
             metadata = MetaData(bind=self.__engine)
             metadata.drop_all()
 
     def all(self, cls=None):
         """query on the current database session and return a dictionary"""
-        newdict = {}
-        for classname in classes:
-            if cls is None or cls == classes[classname] or cls == classname:
-                objs = self.__session.query(classes[classname]).all()
-                for obj in objs:
-                    key = obj.__class__.__name__ + '.' + obj.id
-                    newdict[key] = obj
-        return newdict
+        from models import storage
+        dic = {}
+        if cls is None:
+            result = self.__session.query(
+                State, User, City, Amenity, Place, Review).all()
+            for r in result:
+                dic[f"{r.__class__.__name__}.{r.id}"] = r
+            return (dic)
+        else:
+            if (isinstance(cls, str)):
+                result = self.__session.query(eval(cls)).all()
+            else:
+                result = self.__session.query(cls).all()
+
+            for r in result:
+                dic[f"{r.__class__.__name__}.{r.id}"] = r
+            return (dic)
 
     def new(self, obj):
         """add the object to the current database session"""
@@ -61,7 +62,7 @@ class DBStorage():
 
     def delete(self, obj=None):
         """delete from the current database session obj if not None"""
-        if obj is not None:
+        if obj:
             self.__session.delete(obj)
 
     def reload(self):
@@ -73,4 +74,5 @@ class DBStorage():
         from models.city import City
         from models.amenity import Amenity
         from models.review import Review
+        Base.metadata.create_all(self.__engine)
         Base.metadata.create_all(self.__engine)

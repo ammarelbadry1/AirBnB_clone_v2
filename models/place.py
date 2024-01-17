@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 """ Place Module for HBNB project """
 from models.base_model import BaseModel, Base
-from models.amenity import Amenity
-import os
-from sqlalchemy import Column, String, ForeignKey, Integer, Float, Table
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from models import storage
+import os
+from models.review import Review
+from models.amenity import Amenity
+
 
 place_amenity = Table('place_amenity', Base.metadata,
                       Column('place_id', String(60),
@@ -16,57 +17,39 @@ place_amenity = Table('place_amenity', Base.metadata,
 
 class Place(BaseModel, Base):
     """ A place to stay """
-    HBNB_TYPE_STORAGE = os.getenv('db')
+    __tablename__ = 'places'
 
-    if HBNB_TYPE_STORAGE == 'db':
-        __tablename__ = 'places'
-        city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
-        user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
-        name = Column(String(128), nullable=False)
-        description = Column(String(1024), nullable=False)
-        number_rooms = Column(Integer, nullable=False, default=0)
-        number_bathrooms = Column(Integer, nullable=False, default=0)
-        max_guest = Column(Integer, nullable=False, default=0)
-        price_by_night = Column(Integer, nullable=False, default=0)
-        latitude = Column(Float, nullable=False)
-        longitude = Column(Float, nullable=False)
-        reviews = relationship('Review', backref='place',
-                               cascade=('all, delete-orphan'))
-    else:
-        city_id = ""
-        user_id = ""
-        name = ""
-        description = ""
-        number_rooms = 0
-        number_bathrooms = 0
-        max_guest = 0
-        price_by_night = 0
-        latitude = 0.0
-        longitude = 0.0
-        amenity_ids = []
-
+    city_id = Column(String(60), ForeignKey("cities.id"), nullable=False)
+    user_id = Column(String(60), ForeignKey("users.id"), nullable=False)
+    name = Column(String(128), nullable=False)
+    description = Column(String(1024))
+    number_rooms = Column(Integer, default=0, nullable=False)
+    number_bathrooms = Column(Integer, default=0, nullable=False)
+    max_guest = Column(Integer, default=0, nullable=False)
+    price_by_night = Column(Integer, default=0, nullable=False)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    amenity_ids = []
+    reviews = relationship("Review", backref="place",
+                           cascade="all, delete-orphan")
+    amenities = relationship("Amenity",
+                             secondary=place_amenity, viewonly=False)
+    if os.environ['HBNB_ENV'] != 'db':
         @property
         def reviews(self):
-            """
-            method that returns the list of Review instances with
-            place_id equals to the current Place.id.
-            """
-            newlist = []
-            review_dict = storage.all('Review')
-            for value in review_dict.values():
-                if self.id == value['place_id']:
-                    newlist.append(value)
-            return newlist
+            """Getter method to retrieve related Review instances."""
+            from models import storage
+            dic = storage.all('Review')
+            return [].append(v for k, v in dic.items()
+                             if self.id == v['place_id'])
 
         @property
         def amenities(self):
-            """Getter method to retrieve related Amenity instances"""
-            newlist = []
-            amenity_dict = storage.all('Amenity')
-            for value in amenity_dict.values():
-                if self.id == value['amenity_ids']:
-                    newlist.append(value)
-            return newlist
+            """Getter method to retrieve related Amenity instances."""
+            from models import storage
+            dic = storage.all('Amenity')
+            return [].append(v for k, v in dic.items()
+                             if self.id == v['amenity_ids'])
 
         @amenities.setter
         def amenities(self, obj):
