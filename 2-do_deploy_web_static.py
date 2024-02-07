@@ -14,7 +14,7 @@ def do_deploy(archive_path):
         archive_path (str): the path to the archived file
     """
 
-    if (not os.path.exists(archive_path)):
+    if not os.path.exists(archive_path):
         return False
 
     if not put(archive_path, "/tmp/").succeeded:
@@ -30,15 +30,16 @@ def do_deploy(archive_path):
     if not sudo("mkdir -p {}".format(folder_abs_path)).succeeded:
         return False
 
-    with cd(folder_abs_path):
-        if not sudo("tar -xzf /tmp/{}".format(archive_file)).succeeded:
-            return False
+    if not sudo("tar -xzf /tmp/{} -C {}"
+                .format(archive_file, folder_abs_path)).succeeded:
+        return False
 
-        if not sudo("mv web_static/* .").succeeded:
-            return False
+    if not sudo("mv {}/web_static/* {}"
+                .format(folder_abs_path, folder_abs_path)).succeeded:
+        return False
 
-        if not sudo("rm -r web_static/").succeeded:
-            return False
+    if not sudo("rm -r {}/web_static/".format(folder_abs_path)).succeeded:
+        return False
 
     if not sudo("rm /tmp/{}".format(archive_file)).succeeded:
         return False
