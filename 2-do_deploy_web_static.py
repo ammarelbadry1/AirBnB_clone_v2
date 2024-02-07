@@ -31,11 +31,11 @@ def do_deploy(archive_path):
         return False
 
     if not run("tar -xzf /tmp/{} -C {}"
-                .format(archive_file, folder_abs_path)).succeeded:
+               .format(archive_file, folder_abs_path)).succeeded:
         return False
 
     if not run("mv {}/web_static/* {}"
-                .format(folder_abs_path, folder_abs_path)).succeeded:
+               .format(folder_abs_path, folder_abs_path)).succeeded:
         return False
 
     if not run("rm -rf {}/web_static/".format(folder_abs_path)).succeeded:
@@ -48,7 +48,7 @@ def do_deploy(archive_path):
         return False
 
     if not run("ln -sf {} /data/web_static/current"
-                .format(folder_abs_path)).succeeded:
+               .format(folder_abs_path)).succeeded:
         return False
 
     return True
