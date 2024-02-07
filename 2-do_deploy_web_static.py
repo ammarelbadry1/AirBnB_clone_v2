@@ -17,20 +17,37 @@ def do_deploy(archive_path):
     if (not os.path.exists(archive_path)):
         return False
 
-    path_tkns = archive_path.split('/')
-    our_folder = path_tkns[-1][:-4]
-    put(archive_path, "/tmp/")
-    abs_path = "/data/web_static/releases/" + our_folder
-    create_dir = "mkdir -p " + abs_path
-    change_dir = "cd " + abs_path
-    sudo(create_dir)
-    with cd(abs_path):
-        abs_path2 = "/tmp/" + path_tkns[-1]
-        uncompress = "tar -xvzf " + abs_path2
-        sudo(uncompress)
-        remove_archive = "rm /tmp/" + path_tkns[-1]
-        sudo(remove_archive)
-        sudo("rm -r /data/web_static/current")
-        create_symlink = "ln -sf " + abs_path + " /data/web_static/current"
-        sudo(create_symlink)
+    if not put(archive_path, "/tmp/").succeeded:
+        return False
+
+    # Extracting archive file name from the path
+    archive_file = archive_path.split('/')[-1]
+
+    # Get the new folder name that we will uncompress the archive to it
+    static_content_folder = archive_file[:-4]
+
+    folder_abs_path = "/data/web_static/releases/" + static_content_folder
+    if not sudo("mkdir -p {}".format(folder_abs_path)).succeeded:
+        return False
+
+    with cd(folder_abs_path):
+        if not sudo("tar -xzf /tmp/{}".format(archive_file)).succeeded:
+            return False
+
+        if not sudo("mv web_static/* .").succeeded:
+            return False
+
+        if not sudo("rm -r web_static/").succeeded:
+            return False
+
+    if not sudo("rm /tmp/{}".format(archive_file)).succeeded:
+        return False
+
+    if not sudo("rm -r /data/web_static/current").succeeded:
+        return False
+
+    if not sudo("ln -sf {} /data/web_static/current"
+                .format(folder_abs_path)).succeeded:
+        return False
+
     return True

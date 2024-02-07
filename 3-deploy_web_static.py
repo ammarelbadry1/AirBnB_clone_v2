@@ -8,15 +8,75 @@ env.user = 'ubuntu'
 env.hosts = ['18.234.145.189', '34.229.66.147']
 
 
-def deploy():
-    """Deploys our static files using old functions"""
+def do_pack():
+    """contains the shell script commands that generates
+    a .tgz archive from the contents of the web_static folder."""
 
-    do_pack = __import__('1-pack_web_static').do_pack
-    do_deploy = __import__('2-do_deploy_web_static').do_deploy
+    if not local("mkdir -p versions").succeeded:
+        return None
 
-    archive_path = do_pack()
-    if (not archive_path):
+    dt = datetime.utcnow()
+    dt = "{}{}{}{}{}{}".format(dt.year, dt.month, dt.day,
+                               dt.hour, dt.minute, dt.second)
+    target_path = "versions/web_static_{}.tgz".format(dt)
+    if not local("tar -czvf {} web_static".format(target_path)).succeeded:
+        return None
+
+    return target_path
+
+
+def do_deploy(archive_path):
+    """Distributes web_static archive to web servers
+
+    Args:
+        archive_path (str): the path to the archived file
+    """
+
+    if (not os.path.exists(archive_path)):
         return False
 
-    result = do_deploy(archive_path)
-    return result
+    if not put(archive_path, "/tmp/").succeeded:
+        return False
+
+    # Extracting archive file name from the path
+    archive_file = archive_path.split('/')[-1]
+
+    # Get the new folder name that we will uncompress the archive to it
+    static_content_folder = archive_file[:-4]
+
+    folder_abs_path = "/data/web_static/releases/" + static_content_folder
+    if not sudo("mkdir -p {}".format(folder_abs_path)).succeeded:
+        return False
+
+    with cd(folder_abs_path):
+        if not sudo("tar -xzf /tmp/{}".format(archive_file)).succeeded:
+            return False
+
+        if not sudo("mv web_static/* .").succeeded:
+            return False
+
+        if not sudo("rm -r web_static/").succeeded:
+            return False
+
+    if not sudo("rm /tmp/{}".format(archive_file)).succeeded:
+        return False
+
+    if not sudo("rm -r /data/web_static/current").succeeded:
+        return False
+
+    if not sudo("ln -sf {} /data/web_static/current"
+                .format(folder_abs_path)).succeeded:
+        return False
+
+    return True
+
+
+def deploy():
+    """Creates archive of the static content and
+    distributes it to our web servers"""
+
+    archive_path = do_pack()
+    if (archive_path is None):
+        return False
+
+    return do_deploy(archive_path)
