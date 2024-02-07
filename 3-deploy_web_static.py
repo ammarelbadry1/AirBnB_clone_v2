@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 from fabric.api import *
 
-
 env.user = 'ubuntu'
 env.hosts = ['18.234.145.189', '34.229.66.147']
 
@@ -46,27 +45,27 @@ def do_deploy(archive_path):
     static_content_folder = archive_file[:-4]
 
     folder_abs_path = "/data/web_static/releases/" + static_content_folder
-    if not sudo("mkdir -p {}".format(folder_abs_path)).succeeded:
+    if not run("mkdir -p {}".format(folder_abs_path)).succeeded:
         return False
 
-    if not sudo("tar -xzf /tmp/{} -C {}"
+    if not run("tar -xzf /tmp/{} -C {}"
                 .format(archive_file, folder_abs_path)).succeeded:
         return False
 
-    if not sudo("mv {}/web_static/* {}"
+    if not run("mv {}/web_static/* {}"
                 .format(folder_abs_path, folder_abs_path)).succeeded:
         return False
 
-    if not sudo("rm -r {}/web_static/".format(folder_abs_path)).succeeded:
+    if not run("rm -rf {}/web_static/".format(folder_abs_path)).succeeded:
         return False
 
-    if not sudo("rm /tmp/{}".format(archive_file)).succeeded:
+    if not run("rm /tmp/{}".format(archive_file)).succeeded:
         return False
 
-    if not sudo("rm -r /data/web_static/current").succeeded:
+    if not run("rm -rf /data/web_static/current").succeeded:
         return False
 
-    if not sudo("ln -sf {} /data/web_static/current"
+    if not run("ln -sf {} /data/web_static/current"
                 .format(folder_abs_path)).succeeded:
         return False
 
