@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """This module contains a function that package the web_static folder"""
+from datetime import datetime
 from fabric.api import *
 
 
@@ -7,12 +8,14 @@ def do_pack():
     """contains the shell script commands that generates
     a .tgz archive from the contents of the web_static folder."""
 
-    local("mkdir -p versions")
-    result = local("tar -czvf versions/\
-web_static_$(date '+%y%m%d%H%M%S').tgz web_static/")
+    if not local("mkdir -p versions").succeeded:
+        return None
 
-    if (result.succeeded):
-        with lcd("versions/"):
-            realpath = local("realpath $(ls)")
-            return realpath
-    return None
+    dt = datetime.utcnow()
+    dt = "{}{}{}{}{}{}".format(dt.year, dt.month, dt.day,
+                               dt.hour, dt.minute, dt.second)
+    target_path = "versions/web_static_{}.tgz".format(dt)
+    if not local("tar -czvf {} web_static".format(target_path)).succeeded:
+        return None
+
+    return target_path
